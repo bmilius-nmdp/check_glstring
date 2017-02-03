@@ -2,7 +2,28 @@
 """
 check_glstring.py
 
-Does a sanity check of a GL String
+This was in response to a question:
+    'What options are there for enforcing a few more rules in the
+    strict-mode GL service, like making sure that the alleles on either
+    side of a +, / or | operator belong to the same locus?
+
+    I realize that limiting an “expression”(?) to a single “+” sign
+    is probably not a good idea, since some gene systems might have
+    true duplications, and so you could in theory have a GL String like
+    “GeneA*01+GeneA*02+GeneA*03+GeneA*04”.'
+
+My reply:
+    'Re making sure the alleles on either side of +, / or | operator
+    belong to the same locus, that makes sense for / but the others
+    would include ~ so it would require some tricky conditionals. For
+    example, HLA-A*01:01~HLA-B*44:02+HLA-A*02:01~HLA-B*08:01 has two
+    loci on either side of the + but makes perfect sense.
+
+    We could just write a separate script to check the GL string after
+    the GL service gives back a URI. I can take a take a stab at writing
+    a python script to do that.'
+
+Right now, this script does a few sanity checks of a GL String
 
 checks...
 - if locus found in more than one locus block
@@ -25,45 +46,6 @@ todo:
 
 import argparse
 import re
-
-
-def gl_to_allele(gl):
-    for locus_block in gl.split('^'):
-        for genotype in locus_block.split('|'):
-            for locus in genotype.split('+'):
-                for allele_list in locus.split('~'):
-                    for allele in allele_list.split('/'):
-                        print(allele)
-
-
-def gl_to_allele2(gl):
-    for locus_block in gl.split('^'):
-        for genotype in locus_block.split('|'):
-            for locus in genotype.split('+'):
-                for allele_list in locus.split('~'):
-                    for allele in allele_list.split('/'):
-                        yield allele
-
-
-def gl_to_allele3(gl):
-    for allele in re.split('[\^\|\+\~\/]', gl):
-        yield allele
-
-
-def gl_to_muug(gl):
-    # create an empty list
-    muug_list = []
-    (mom, dad) = gl.split('+')
-    momi = mom.split('~')
-    dadi = dad.split('~')
-
-    for ma, pa in zip(momi, dadi):
-        parents = [ma, pa]
-        parents.sort()  # sort in place
-        ug = '+'.join(parents)
-        muug_list.append(ug)
-    muug_list.sort()  # sort in place
-    return ('^'.join(muug_list))
 
 
 def getalleles(gl):
@@ -130,7 +112,7 @@ def check_allele_lists(gl):
         for allele_list in allele_lists:
             loci = getloci(getalleles(allele_list))
             if len(loci) > 1:
-                print(allele_list, ' contains more than on locus')
+                print(allele_list, ' contains more than one locus')
             else:
                 print(allele_list, ' OK')
     else:
