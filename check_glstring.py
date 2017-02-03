@@ -13,8 +13,7 @@ This was in response to a question:
     “GeneA*01+GeneA*02+GeneA*03+GeneA*04”.'
 
 My reply:
-    'Re making sure the alleles on either side of +, / or | operator
-    belong to the same locus, that makes sense for / but the others
+    'that makes sense for / but the others
     would include ~ so it would require some tricky conditionals. For
     example, HLA-A*01:01~HLA-B*44:02+HLA-A*02:01~HLA-B*08:01 has two
     loci on either side of the + but makes perfect sense.
@@ -34,7 +33,7 @@ checks...
 
 - if a allele list contains more than one locus
   e.g., this is good
-  HLA-B*44:01/HLA-C*44:02
+  HLA-B*44:01/HLA-B*44:02
   e.g., this is bad
   HLA-B*44:01/HLA-C*44:02
 
@@ -76,6 +75,15 @@ def checkdups(mysetlist):
     return alldups
 
 
+def get_allele_lists(gl):
+    """takes a GL String and returns a list of allele lists it contains"""
+    allele_lists = []
+    for allele_list in re.split('[\^\|\+\~]', gl):
+        if "/" in allele_list:
+            allele_lists.append(allele_list)
+    return allele_lists
+
+
 def check_locus_blocks(gl):
     """check to see if any loci are found in more than one locus block"""
     locusblocks = gl.split('^')
@@ -93,15 +101,6 @@ def check_locus_blocks(gl):
         print("only one locus block, nothing to check\n")
 
 
-def get_allele_lists(gl):
-    """takes a GL String and returns a list of allele lists it contains"""
-    allele_lists = []
-    for allele_list in re.split('[\^\|\+\~]', gl):
-        if "/" in allele_list:
-            allele_lists.append(allele_list)
-    return allele_lists
-
-
 def check_allele_lists(gl):
     """takes a GL String, and checks to see if there are more than one loci
     each of the allele lists, and if any of the allele lists have a duplicate
@@ -116,7 +115,7 @@ def check_allele_lists(gl):
             else:
                 print(allele_list, ' OK')
     else:
-        print('no allele lists found in GL String')
+        print('no allele ambuiguity lists found in GL String')
 
 
 def do_check(gl):
