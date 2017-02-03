@@ -153,7 +153,6 @@ def main():
         ]
         for gl in testgl:
             do_check(gl)
-        print("hello")
 
 
 if __name__ == '__main__':
