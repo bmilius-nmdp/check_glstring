@@ -3,26 +3,21 @@
 check_glstring.py
 
 This was in response to a question:
-    'What options are there for enforcing a few more rules in the
-    strict-mode GL service, like making sure that the alleles on either
+    'What options are there for enforcing a few more rules ...
+    like making sure that the alleles on either
     side of a +, / or | operator belong to the same locus?
 
-    I realize that limiting an “expression”(?) to a single “+” sign
-    is probably not a good idea, since some gene systems might have
-    true duplications, and so you could in theory have a GL String like
-    “GeneA*01+GeneA*02+GeneA*03+GeneA*04”.'
-
 My reply:
-    'that makes sense for / but the others
-    would include ~ so it would require some tricky conditionals. For
-    example, HLA-A*01:01~HLA-B*44:02+HLA-A*02:01~HLA-B*08:01 has two
-    loci on either side of the + but makes perfect sense.
+    'that makes sense for / but the others would include ~ so
+    it would require some tricky conditionals. For example,
+    HLA-A*01:01~HLA-B*44:02+HLA-A*02:01~HLA-B*08:01 has two loci on
+    either side of the + but makes perfect sense.
 
     We could just write a separate script to check the GL string after
     the GL service gives back a URI. I can take a take a stab at writing
     a python script to do that.'
 
-Right now, this script does a few sanity checks of a GL String
+Right now, this script does a couple of sanity checks of a GL String
 
 checks...
 - if locus found in more than one locus block
