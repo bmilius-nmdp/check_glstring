@@ -48,30 +48,29 @@ import re
 
 
 def getalleles(gl):
-    """given a glstring, return a set containing all the alleles"""
+    """given a GL String, return a set containing all the alleles"""
     alleles = set()
     for allele in re.split('[\^\|\+\~\/]', gl):
         alleles.add(allele)
     return alleles
 
 
-def getloci(alleles):
-    """given a list or set of alleles, return a set containing all the loci"""
+def getloci(gl):
+    """given a GL String, return a set containing all the loci"""
+    alleles = getalleles(gl)
     loci = set()
     for allele in alleles:
         loci.add(allele.split('*')[0])
     return loci
 
 
-def checkdups(mysetlist):
+def checkdups(setlist):
     """takes a list of sets, and returns a set of items that are found in
-    more than one set"""
+    more than one set in the list"""
     alldups = set()
-    for i, myset in enumerate(mysetlist):
-        dups = set()
-        othersets = set().union(*mysetlist[i+1:])
-        dups = myset & othersets
-        alldups.update(dups)
+    for i, myset in enumerate(setlist):
+        othersets = set().union(*setlist[i+1:])
+        alldups.update(myset & othersets)
     return alldups
 
 
@@ -91,7 +90,7 @@ def check_locus_blocks(gl):
         loci = []
         for locusblock in locusblocks:
             print(locusblock)
-            loci.append(getloci(getalleles(locusblock)))
+            loci.append(getloci(locusblock))
         dups = checkdups(loci)
         if len(dups) == 0:
             print("No loci found in more than one locus block\n")
@@ -105,11 +104,10 @@ def check_allele_lists(gl):
     """takes a GL String, and checks to see if there are more than one loci
     each of the allele lists, and if any of the allele lists have a duplicate
     allele"""
-
     allele_lists = get_allele_lists(gl)
     if len(allele_lists) > 0:
         for allele_list in allele_lists:
-            loci = getloci(getalleles(allele_list))
+            loci = getloci(allele_list)
             if len(loci) > 1:
                 print(allele_list, ' contains more than one locus')
             else:
@@ -143,18 +141,24 @@ def main():
         do_check(args.glstring)
     else:
         testgl = [
-            "HLA-A*01:01/HLA-A*01:02",
-            "HLA-A*01:01/HLA-B*01:02",
-            "HLA-A*01:01/HLA-A*01:02+HLA-A*24:02",
-            ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02|"
-             "HLA-A*01:03/HLA-A*01:04+HLA-A*24:03"),
-            "HLA-A*01:01~HLA-B*44:02+HLA-A*02:01~HLA-B*08:01",
-            "HLA-A*01:01+HLA-A*24:02^HLA-B*08:01+HLA-B*44:02",
-            ("HLA-A*01:01+HLA-A*24:02^HLA-B*08:01+HLA-B*44:02^"
-             "HLA-A*01:01+HLA-A*24:02^HLA-B*08:01+HLA-B*44:02"),
+            # "HLA-A*01:01/HLA-A*01:02",
+            # "HLA-A*01:01/HLA-B*01:02",
+            # "HLA-A*01:01/HLA-A*01:02+HLA-A*24:02",
+            # ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02|"
+            #  "HLA-A*01:03/HLA-A*01:04+HLA-A*24:03"),
+            # "HLA-A*01:01~HLA-B*44:02+HLA-A*02:01~HLA-B*08:01",
+            # "HLA-A*01:01+HLA-A*24:02^HLA-B*08:01+HLA-B*44:02",
+            ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02^HLA-B*08:01+HLA-B*44:02^"
+             "HLA-A*01:01+HLA-A*24:02^HLA-B*08:01+HLA-B*44:02/HLA-A*01:01"),
+            ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02/HLA-B*08:01^"
+             "HLA-C*01:02"),
+            ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02/HLA-B*08:01^"
+             "HLA-C*01:02+HLA-A*01:01^"
+             "HLA-DRB5*01:01~HLA-DRB1*03:01"),
         ]
         for gl in testgl:
             do_check(gl)
+        print("hello")
 
 
 if __name__ == '__main__':
