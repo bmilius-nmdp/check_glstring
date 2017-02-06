@@ -24,7 +24,18 @@ import argparse
 import re
 
 
-def getalleles(glstring):
+def get_loci(glstring):
+    """
+    Takes GL String and returns a set containing all the loci
+    """
+    alleles = get_alleles(glstring)
+    loci = set()
+    for allele in alleles:
+        loci.add(allele.split('*')[0])
+    return loci
+
+
+def get_alleles(glstring):
     """
     Takes a GL String, and returns a set containing all the alleles
     """
@@ -32,29 +43,6 @@ def getalleles(glstring):
     for allele in re.split(r'[/~+|^]', glstring):
         alleles.add(allele)
     return alleles
-
-
-def getloci(glstring):
-    """
-    Takes GL String and returns a set containing all the loci
-    """
-    alleles = getalleles(glstring)
-    loci = set()
-    for allele in alleles:
-        loci.add(allele.split('*')[0])
-    return loci
-
-
-def getduplicates(setlist):
-    """
-    Takes a list of sets, and returns a set of items that are found in
-    more than one set in the list
-    """
-    duplicates = set()
-    for i, myset in enumerate(setlist):
-        othersets = set().union(*setlist[i+1:])
-        duplicates.update(myset & othersets)
-    return duplicates
 
 
 def get_allele_lists(glstring):
@@ -66,6 +54,49 @@ def get_allele_lists(glstring):
         if "/" in allele_list:
             allele_lists.append(allele_list)
     return allele_lists
+
+
+def get_genotypes(glstring):
+    """
+    Take a GL String, and return a list of genotypes
+    """
+    parsed = re.split(r'[|^]', glstring)
+    genotypes = []
+    for genotype in parsed:
+        if "+" in genotype:
+            genotypes.append(genotype)
+    return genotypes
+
+
+def get_genotype_lists(glstring):
+    """
+    Take a GL String, and return a list of genotype lists
+    """
+    parsed = re.split(r'[\^]', glstring)
+    genotype_lists = []
+    for genotype_list in parsed:
+        if "|" in genotype_list:
+            genotype_lists.append(genotype_list)
+    return genotype_lists
+
+
+def get_locus_blocks(glstring):
+    """
+    Take a GL String, and return a list of locus blocks
+    """
+    return re.split(r'[\^]', glstring)
+
+
+def get_duplicates(setlist):
+    """
+    Takes a list of sets, and returns a set of items that are found in
+    more than one set in the list
+    """
+    duplicates = set()
+    for i, myset in enumerate(setlist):
+        othersets = set().union(*setlist[i+1:])
+        duplicates.update(myset & othersets)
+    return duplicates
 
 
 def check_locus_blocks(glstring):
@@ -80,8 +111,8 @@ def check_locus_blocks(glstring):
     if len(locusblocks) > 1:
         loci = []
         for locusblock in locusblocks:
-            loci.append(getloci(locusblock))
-        duplicates = getduplicates(loci)
+            loci.append(get_loci(locusblock))
+        duplicates = get_duplicates(loci)
     return locusblocks, duplicates
 
 
@@ -100,7 +131,7 @@ def check_genotype_lists(glstring):
     checked_gl = []
     for genotype_list in genotype_lists:
         if '|' in genotype_list:
-            loci = getloci(genotype_list)
+            loci = get_loci(genotype_list)
             if len(loci) > 1:
                 if '~' not in genotype_list:
                     msg = 'WARNING'
@@ -124,7 +155,7 @@ def check_allele_lists(glstring):
     checked_al = []
     if len(allele_lists) > 0:
         for allele_list in allele_lists:
-            loci = getloci(allele_list)
+            loci = get_loci(allele_list)
             if len(loci) > 1:
                 msg = 'WARNING'
             else:
@@ -147,7 +178,7 @@ def check_genotypes(glstring):
     checked_gt = []
     for genotype in genotypes:
         if '+' in genotype:
-            loci = getloci(genotype)
+            loci = get_loci(genotype)
             if len(loci) > 1:
                 if '~' in genotype:
                     msg = 'Phased - Check separately'
