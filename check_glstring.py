@@ -2,108 +2,174 @@
 """
 check_glstring.py
 
-This was in response to a question:
-    'What options are there for enforcing a few more rules ...
-    like making sure that the alleles on either
-    side of a +, / or | operator belong to the same locus?
+This script does a few sanity checks of a GL String
 
-My reply:
-    'that makes sense for / but the others would include ~ so
-    it would require some tricky conditionals. For example,
-    HLA-A*01:01~HLA-B*44:02+HLA-A*02:01~HLA-B*08:01 has two loci on
-    either side of the + but makes perfect sense.
-
-    We could just write a separate script to check the GL string after
-    the GL service gives back a URI. I can take a take a stab at writing
-    a python script to do that.'
-
-Right now, this script does a couple of sanity checks of a GL String
-
-checks...
+Checks the following...
 - if a locus is found in more than one locus block
   e.g., this is good
-  HLA-A*01:01/HLA-A*01:02+HLA-A*24:02|HLA-A*01:03/HLA-A*01:04+HLA-A*24:03
+  HLA-A*01:01/HLA-A*01:02+HLA-A*24:02^HLA-B*08:01+HLA-B*44:02^"
   e.g., this is bad
-  HLA-A*01:01/HLA-A*01:02+HLA-A*24:02^HLA-A*01:03/HLA-A*01:04+HLA-A*24:03
+  HLA-A*01:01/HLA-A*01:02+HLA-A*24:02^HLA-B*08:01+HLA-A*44:02^"
 
-- if an allele list contains more than one locus
-  e.g., this is good
-  HLA-B*44:01/HLA-B*44:02
-  e.g., this is bad
-  HLA-B*44:01/HLA-C*44:02
+- if any of the following contain more than one locus
+  genotype lists
+  genotypes
+  allele lists
 
-todo:
-    check_genotypelist
-    check_genotype
-    check_phased
+Note: Both genotypes and genotype lists may contain phased loci,
+      and so these may contain multiple loci
 """
 
 import argparse
 import re
 
 
-def getalleles(gl):
-    """given a GL String, return a set containing all the alleles"""
+def getalleles(glstring):
+    """
+    Takes a GL String, and returns a set containing all the alleles
+    """
     alleles = set()
-    for allele in re.split(r'[/~+|^]', gl):
+    for allele in re.split(r'[/~+|^]', glstring):
         alleles.add(allele)
     return alleles
 
 
-def getloci(gl):
-    """given a GL String, return a set containing all the loci"""
-    alleles = getalleles(gl)
+def getloci(glstring):
+    """
+    Takes GL String and returns a set containing all the loci
+    """
+    alleles = getalleles(glstring)
     loci = set()
     for allele in alleles:
         loci.add(allele.split('*')[0])
     return loci
 
 
-def checkdups(setlist):
-    """takes a list of sets, and returns a set of items that are found in
-    more than one set in the list"""
-    dups = set()
+def getduplicates(setlist):
+    """
+    Takes a list of sets, and returns a set of items that are found in
+    more than one set in the list
+    """
+    duplicates = set()
     for i, myset in enumerate(setlist):
         othersets = set().union(*setlist[i+1:])
-        dups.update(myset & othersets)
-    return dups
+        duplicates.update(myset & othersets)
+    return duplicates
 
 
-def get_allele_lists(gl):
-    """takes a GL String and returns a list of allele lists it contains"""
+def get_allele_lists(glstring):
+    """
+    Takes a GL String and returns a list of allele lists it contains
+    """
     allele_lists = []
-    for allele_list in re.split(r'[~+|^]', gl):
+    for allele_list in re.split(r'[~+|^]', glstring):
         if "/" in allele_list:
             allele_lists.append(allele_list)
     return allele_lists
 
 
-def check_locus_blocks(gl):
-    """check to see if any loci are found in more than one locus block"""
-    locusblocks = gl.split('^')
-    dups = set()
+def check_locus_blocks(glstring):
+    """
+    Takes a GL String and checks to see if any loci are found in
+    more than one locus block.
+    Returns a tuple containing a list of locus blocks, and set of loci
+    found in more than one block
+    """
+    locusblocks = glstring.split('^')
+    duplicates = set()
     if len(locusblocks) > 1:
         loci = []
         for locusblock in locusblocks:
             loci.append(getloci(locusblock))
-        dups = checkdups(loci)
-    return locusblocks, dups
+        duplicates = getduplicates(loci)
+    return locusblocks, duplicates
 
 
-def check_allele_lists(gl):
-    """takes a GL String, and checks to see if there are more than one loci
-    each of the allele lists, and if any of the allele lists have a duplicate
-    allele"""
-    allele_lists = get_allele_lists(gl)
+def check_genotype_lists(glstring):
+    """
+    Takes a GL String, and checks to see if any unphased genotype lists
+    contain more than one locus. A list of tuples is returned. Each
+    tuple consists of the genotype list, a set of loci found in the
+    genotype list, and a text string. For genotype lists containing of
+    only unphased genotypes, the text string is either 'OK' (if only one
+    locus is found), or 'WARNING' (if more than one locus if found).
+    For for genotype lists that contain at lease one phased genotype
+    (containing '~'), the text string is 'Phased - check separately'
+    """
+    genotype_lists = glstring.split('^')
+    checked_gl = []
+    for genotype_list in genotype_lists:
+        if '|' in genotype_list:
+            loci = getloci(genotype_list)
+            if len(loci) > 1:
+                if '~' not in genotype_list:
+                    msg = 'WARNING'
+                else:
+                    msg = 'Phased, check separately'
+            else:
+                msg = 'OK'
+            checked_gl.append((genotype_list, loci, msg))
+    return checked_gl
+
+
+def check_allele_lists(glstring):
+    """
+    Takes a GL String, and checks to see if there are more than one
+    locus in any of the allele lists. A list of tuples is returned. Each
+    tuple consists of the allele list, a set of loci found in the allele
+    list, and a text string. The text string is either 'OK' (if only one
+    locus is found), or 'WARNING' (if more than one locus if found).
+    """
+    allele_lists = get_allele_lists(glstring)
     checked_al = []
     if len(allele_lists) > 0:
-        for i, allele_list in enumerate(allele_lists):
+        for allele_list in allele_lists:
             loci = getloci(allele_list)
             if len(loci) > 1:
-                checked_al.append((allele_list, loci, 'Warning'))
+                msg = 'WARNING'
             else:
-                checked_al.append((allele_list, loci, 'OK'))
+                msg = 'OK'
+            checked_al.append((allele_list, loci, msg))
     return checked_al
+
+
+def check_genotypes(glstring):
+    """
+    Takes a GL String, and checks to see if any unphased genotypes
+    contain more than one locus. A list of tuples is returned. Each
+    tuple consists of the genotype, a set of loci found in the genotype,
+    and a text string. For unphased genotypes, the text string is either
+    'OK' (if only one locus is found), or 'WARNING' (if more than one
+    locus if found). For phased genotypes (containing '~'), the text
+    string is 'Phased - check separately'
+    """
+    genotypes = re.split(r'[|^]', glstring)
+    checked_gt = []
+    for genotype in genotypes:
+        if '+' in genotype:
+            loci = getloci(genotype)
+            if len(loci) > 1:
+                if '~' in genotype:
+                    msg = 'Phased - Check separately'
+                else:
+                    msg = 'Unphased - WARNING'
+            else:
+                msg = 'OK'
+            checked_gt.append((genotype, loci, msg))
+    return checked_gt
+
+
+def printchecked(checked, desc):
+    """
+    Takes a list of checked items and a description, and prints them.
+    """
+    print('Checking ' + desc, '...')
+    if len(checked) > 0:
+        for item in checked:
+            print(item)
+    else:
+        print('No ' + desc + ' found')
+    print()
 
 
 def main():
@@ -118,48 +184,67 @@ def main():
         testgl = [args.glstring]
     else:
         testgl = [
+            # good
+            # "HLA-A*01:01+HLA-A*24:02^HLA-B*44:01+HLA-B*44:02",
+            # "HLA-A*01:01+HLA-A*24:02|HLA-A*01:03+HLA-A*24:03",
+            # "HLA-A*01:01+HLA-A*01:02",
             # "HLA-A*01:01/HLA-A*01:02",
-            # "HLA-A*01:01/HLA-B*01:02",
             # "HLA-A*01:01/HLA-A*01:02+HLA-A*24:02",
             # ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02|"
             #  "HLA-A*01:03/HLA-A*01:04+HLA-A*24:03"),
             # "HLA-A*01:01~HLA-B*44:02+HLA-A*02:01~HLA-B*08:01",
             # "HLA-A*01:01+HLA-A*24:02^HLA-B*08:01+HLA-B*44:02",
-            ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02^HLA-B*08:01+HLA-B*44:02^"
-             "HLA-A*01:01+HLA-A*24:02^HLA-B*08:01+HLA-B*44:02/HLA-A*01:01"),
-            ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02/HLA-B*08:01^"
-             "HLA-C*01:02"),
-            ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02/HLA-B*08:01^"
-             "HLA-C*01:02+HLA-A*01:01^"
-             "HLA-DRB5*01:01~HLA-DRB1*03:01"),
+            ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02|HLA-A*01:03+HLA-A*24:03^"
+             "HLA-B*08:01+HLA-B*44:01/HLA-B*44:02^"
+             "HLA-C*01:02+HLA-C*01:03^"
+             "HLA-DRB5*01:01~HLA-DRB1*03:01+HLA-DRB1*04:07:01/HLA-DRB1*04:92"),
+            # bad
+            # "HLA-A*01:01+HLA-A*24:02^HLA-A*01:03+HLA-A*24:03",
+            # "HLA-A*01:01+HLA-A*24:02|HLA-B*44:01+HLA-B*44:02",
+            # "HLA-A*01:01+HLA-B*01:02",
+            # "HLA-B*44:01/HLA-C*44:02",
+            # ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02|"
+            #  "HLA-A*01:03/HLA-A*01:04+HLA-B*24:03"),
+            # ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02^HLA-B*08:01+HLA-B*44:02^"
+            #  "HLA-A*01:01+HLA-A*24:02^HLA-B*08:01+HLA-B*44:02/HLA-A*01:01"),
+            # ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02/HLA-B*08:01^"
+            #  "HLA-C*01:02"),
+            # ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02/HLA-B*08:01^"
+            #  "HLA-C*01:02+HLA-A*01:01^"
+            #  "HLA-DRB5*01:01~HLA-DRB1*03:01"),
+            ("HLA-A*01:01/HLA-B*01:02+HLA-A*24:02|HLA-A*01:03+HLA-A*24:03^"
+             "HLA-B*08:01+HLA-B*44:01/HLA-B*44:02^"
+             "HLA-C*01:02+HLA-A*01:01~HLA-C*01:03^"
+             "HLA-DRB5*01:01~HLA-DRB1*03:01+HLA-DRB1*04:07:01/HLA-DRB1*04:92"),
         ]
 
     for gl in testgl:
-        print("gl = ", gl, "\n")
+        print("gl =", gl, "\n")
 
         print("Checking locus blocks...")
-        locusblocks, dups = check_locus_blocks(gl)
+        locusblocks, duplicates = check_locus_blocks(gl)
         for locusblock in locusblocks:
             print(locusblock)
         if len(locusblocks) > 1:
-            if len(dups) == 0:
-                print("No loci found in more than one locus block\n")
+            if len(duplicates) == 0:
+                print("OK: no loci found in more than one locus block")
             else:
-                print("Loci found in more than 1 locus block:", dups, "\n")
+                if len(duplicates) == 1:
+                    print("WARNING: Locus found in more than 1 locus block:",
+                          duplicates)
+                else:
+                    print("WARNING: Loci found in more than 1 locus block:",
+                          duplicates)
         else:
-            print("Only one locus block, nothing to check\n")
+            print("Nothing to check: Only one locus block")
+        print()
 
-        print("Checking allele lists...")
-        checked_al = check_allele_lists(gl)
-        if len(checked_al) > 0:
-            for allele_list in checked_al:
-                print(allele_list)
-        else:
-            print('No allele lists found')
-        print("--------\n")
-        # check_genotype_list(gl)
-        # check_genotypes(gl)
-        # check_phased(gl)
+        printchecked(check_genotype_lists(gl), 'genotype lists')
+        printchecked(check_genotypes(gl), 'genotypes')
+        printchecked(check_allele_lists(gl), 'allele lists')
+
+        if len(testgl) > 1:
+            print("--------\n")
 
 
 if __name__ == '__main__':
