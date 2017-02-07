@@ -84,7 +84,8 @@ def get_locus_blocks(glstring):
     """
     Take a GL String, and return a list of locus blocks
     """
-    return re.split(r'[\^]', glstring)
+    # return re.split(r'[\^]', glstring)
+    return glstring.split('^')
 
 
 def get_duplicates(setlist):
@@ -127,19 +128,18 @@ def check_genotype_lists(glstring):
     For for genotype lists that contain at lease one phased genotype
     (containing '~'), the text string is 'Phased - check separately'
     """
-    genotype_lists = glstring.split('^')
+    genotype_lists = get_genotype_lists(glstring)
     checked_gl = []
     for genotype_list in genotype_lists:
-        if '|' in genotype_list:
-            loci = get_loci(genotype_list)
-            if len(loci) > 1:
-                if '~' not in genotype_list:
-                    msg = 'WARNING'
-                else:
-                    msg = 'Phased, check separately'
+        loci = get_loci(genotype_list)
+        if len(loci) > 1:
+            if '~' not in genotype_list:
+                msg = 'WARNING'
             else:
-                msg = 'OK'
-            checked_gl.append((genotype_list, loci, msg))
+                msg = 'Phased, check separately'
+        else:
+            msg = 'OK'
+        checked_gl.append((genotype_list, loci, msg))
     return checked_gl
 
 
@@ -174,19 +174,18 @@ def check_genotypes(glstring):
     locus if found). For phased genotypes (containing '~'), the text
     string is 'Phased - check separately'
     """
-    genotypes = re.split(r'[|^]', glstring)
+    genotypes = get_genotypes(glstring)
     checked_gt = []
     for genotype in genotypes:
-        if '+' in genotype:
-            loci = get_loci(genotype)
-            if len(loci) > 1:
-                if '~' in genotype:
-                    msg = 'Phased - Check separately'
-                else:
-                    msg = 'Unphased - WARNING'
+        loci = get_loci(genotype)
+        if len(loci) > 1:
+            if '~' in genotype:
+                msg = 'Phased - Check separately'
             else:
-                msg = 'OK'
-            checked_gt.append((genotype, loci, msg))
+                msg = 'Unphased - WARNING'
+        else:
+            msg = 'OK'
+        checked_gt.append((genotype, loci, msg))
     return checked_gt
 
 
