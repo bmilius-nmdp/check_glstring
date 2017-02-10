@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-check_glstring.py
+checkgl_standalone.py
 
 This script does a few sanity checks of a GL String
+This is a standalone verison - all functions are included.
 
 Checks the following...
 - if a locus is found in more than one locus block
