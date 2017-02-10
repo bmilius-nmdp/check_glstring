@@ -24,7 +24,7 @@ import argparse
 import re
 
 
-class Glstring(object):
+class GlString:
     """
     common base class for GL Strings
     """
@@ -32,23 +32,6 @@ class Glstring(object):
     def __init__(self, gl, imgthla):
         self.gl = gl
         self.imgthla = imgthla
-
-    def __str__(self):
-        return self.gl
-
-    # def __call__(self, cls):
-        # gl = self.gl
-
-        # def __str__(s):
-        #    return getattr(s, gl)
-
-        # cls.__str__ = __str__
-        # return cls
-
-    # def __new__(cls, value, imgthla):
-        # obj = str.__new__(cls, value)
-        # obj.imgthla = imgthla
-        # return obj
 
     def loci(self):
         """

@@ -1,23 +1,24 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 from setuptools import setup, find_packages
 
 
-with open('README.rst') as f:
+with open('README.md') as f:
     readme = f.read()
 
-with open('LICENSE') as f:
+with open('COPYING.LESSER') as f:
     license = f.read()
 
 setup(
-    name='sample',
+    name='glstring',
     version='0.1.0',
-    description='Sample package for Python-Guide.org',
+    description='GL String handling functions, including sanity checks',
     long_description=readme,
-    author='Kenneth Reitz',
-    author_email='me@kennethreitz.com',
-    url='https://github.com/kennethreitz/samplemod',
+    author='Bob Milius',
+    author_email='bmilius@nmdp.org',
+    url='https://github.com/nmdp-bioinformatics/pyglstring',
     license=license,
-    packages=find_packages(exclude=('tests', 'docs'))
+    packages=find_packages(exclude=('tests', 'docs', 'bin'))
 )
 
