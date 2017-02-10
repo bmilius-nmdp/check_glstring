@@ -318,7 +318,7 @@ def main():
         ]
 
     for gl in testgl:
-        print("gl =", gl, "\n")
+        print("GL String =", gl, "\n")
 
         print("Checking locus blocks...")
         locusblocks, duplicates = check_locus_blocks(gl)

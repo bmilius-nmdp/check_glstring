@@ -35,7 +35,7 @@ def main():
     if args.glstring:
         gl = args.glstring
 
-    print("gl =", gl, "\n")
+    print("GL String =", gl, "\n")
 
     print("Checking locus blocks...")
     locusblocks, duplicates = check.locus_blocks(gl)
