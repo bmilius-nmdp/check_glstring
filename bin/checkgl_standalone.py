@@ -157,6 +157,17 @@ def get_locus_blocks(glstring):
     return glstring.split('^')
 
 
+def get_phased(glstring):
+    """
+    Take a GL String and return a list of phased alleles
+    """
+    phased_list = []
+    for phased in re.split(r'[+|^\]', glstring):
+        if "~" in phased:
+            phased_list.append(phased)
+    return phased_list
+
+
 def get_duplicates(setlist):
     """
     Takes a list of sets, and returns a set of items that are found in
