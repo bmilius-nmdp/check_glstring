@@ -47,20 +47,19 @@ class GlString:
         Takes a GlString, and returns a list of allele lists it contains
         """
         allele_lists = []
-        for allele_list in re.split(r'[~+|^]', self.gls):
-            if "/" in allele_list:
-                allele_lists.append(GlString(allele_list, self.ver))
+        for block in re.split(r'[~+|^]', self.gls):
+            if "/" in block:
+                allele_lists.append(GlString(block, self.ver))
         return allele_lists
 
     def genotypes(self):
         """
         Take a GlString, and return a list of genotypes
         """
-        parsed = re.split(r'[|^]', self.gls)
         genotypes = []
-        for genotype in parsed:
-            if "+" in genotype:
-                genotypes.append(GlString(genotype, self.ver))
+        for block in re.split(r'[|^]', self.gls):
+            if "+" in block:
+                genotypes.append(GlString(block, self.ver))
         return genotypes
 
     def genotype_lists(self):
@@ -68,9 +67,9 @@ class GlString:
         Take a GlString, and return a list of genotype lists
         """
         genotype_lists = []
-        for genotype_list in self.gls.split('^'):
-            if "|" in genotype_list:
-                genotype_lists.append(GlString(genotype_list, self.ver))
+        for block in self.gls.split('^'):
+            if "|" in block:
+                genotype_lists.append(GlString(block, self.ver))
         return genotype_lists
 
     def locus_blocks(self):
@@ -82,22 +81,46 @@ class GlString:
             locus_blocks.append(GlString(locus_block, self.ver))
         return locus_blocks
 
-    def phased(self):
+    def genotype_blocks(self):
+        """
+        Take a GL String as str, return a list of blocks that make up all
+        genotypes found
+        """
+        genotypes = self.genotypes()
+        genotype_blocks = []
+        for genotype in genotypes:
+            for block in genotype.gls.split('+'):
+                genotype_blocks.append(GlString(block, self.ver))
+        return genotype_blocks
+
+    def genotype_list_blocks(self):
+        """
+        Take a GL String as str, return a list of blocks that make up all
+        genotype lists found
+        """
+        genotype_lists = self.genotype_lists()
+        genotype_list_blocks = []
+        for genotype_list in genotype_lists:
+            for block in genotype_list.gls.split('|'):
+                genotype_list_blocks.append(GlString(block, self.ver))
+        return genotype_list_blocks
+
+    def haplotypes(self):
         """
         Takes a GlString, and returns a list of phased alleles it contains
         """
-        phased_list = []
-        for phased in re.split(r'[+|^/]', self.gls):
-            if "~" in phased:
-                phased_list.append(GlString(phased, self.ver))
-        return phased_list
+        haplotypes = []
+        for block in re.split(r'[+|^]', self.gls):
+            if "~" in block:
+                haplotypes.append(GlString(block, self.ver))
+        return haplotypes
 
 
-def get_loci(glstring):
+def get_loci(glstr):
     """
     Takes GL String as a str, and returns a set containing all the loci
     """
-    alleles = get_alleles(glstring)
+    alleles = get_alleles(glstr)
     loci = set()
     for allele in alleles:
         loci.add(allele.split('*')[0])
@@ -119,9 +142,9 @@ def get_allele_lists(glstr):
     Takes a GL String as a str and returns a list of allele lists it contains
     """
     allele_lists = []
-    for allele_list in re.split(r'[~+|^]', glstr):
-        if "/" in allele_list:
-            allele_lists.append(allele_list)
+    for block in re.split(r'[~+|^]', glstr):
+        if "/" in block:
+            allele_lists.append(block)
     return allele_lists
 
 
@@ -129,11 +152,10 @@ def get_genotypes(glstr):
     """
     Take a GL String as a str, and return a list of genotypes
     """
-    parsed = re.split(r'[|^]', glstr)
     genotypes = []
-    for genotype in parsed:
-        if "+" in genotype:
-            genotypes.append(genotype)
+    for block in re.split(r'[|^]', glstr):
+        if "+" in block:
+            genotypes.append(block)
     return genotypes
 
 
@@ -142,9 +164,9 @@ def get_genotype_lists(glstr):
     Take a GL String as a str, and return a list of genotype lists
     """
     genotype_lists = []
-    for genotype_list in glstr.split('^'):
-        if "|" in genotype_list:
-            genotype_lists.append(genotype_list)
+    for block in glstr.split('^'):
+        if "|" in block:
+            genotype_lists.append(block)
     return genotype_lists
 
 
@@ -178,19 +200,18 @@ def get_locus_blocks(glstr):
     """
     Take a GL String as str, and return a list of locus blocks
     """
-    # return re.split(r'[\^]', glstr)
     return glstr.split('^')
 
 
-def get_phased(glstr):
+def get_haplotypes(glstr):
     """
     Takes a GL String as a str and returns a list of phased alleles it contains
     """
-    phased_list = []
-    for phased in re.split(r'[+|^/]', glstr):
-        if "~" in phased:
-            phased_list.append(phased)
-    return phased_list
+    haplotypes = []
+    for block in re.split(r'[+|^]', glstr):
+        if "~" in block:
+            haplotypes.append(block)
+    return haplotypes
 
 
 def main():
