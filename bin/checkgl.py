@@ -35,12 +35,12 @@ def main():
     if args.glstring:
         gl = args.glstring
 
-    print("GL String =", gl, "\n")
+    # print("\n", "GL String =", gl, "\n")
 
-    print("Checking locus blocks...")
+    print("\nChecking locus blocks...")
     locusblocks, duplicates = check.locus_blocks(gl)
     for locusblock in locusblocks:
-        print(locusblock)
+        print("# ", locusblock,)
     if len(locusblocks) > 1:
         if len(duplicates) == 0:
             print("OK: no loci found in more than one locus block")
