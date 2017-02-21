@@ -19,78 +19,30 @@ Checks the following...
 
 Note: Both genotypes and genotype lists may contain phased loci,
       and so these may contain multiple loci
+
+example usage:
+# using a problem GL String for input
+checkgl_standalone.py -g 'HLA-A*01:01:01:01/HLA-B*07:02:01:01+HLA-A*24:02:01:01'
+
+# output
+GL String = HLA-A*01:01:01:01/HLA-B*07:02:01:01+HLA-A*24:02:01:01
+
+Checking locus blocks...
+HLA-A*01:01:01:01/HLA-B*07:02:01:01+HLA-A*24:02:01:01
+Nothing to check: Only one locus block
+
+Checking genotype lists ...
+No genotype lists found
+
+Checking genotypes ...
+('HLA-A*01:01:01:01/HLA-B*07:02:01:01+HLA-A*24:02:01:01', {'HLA-A', 'HLA-B'}, 'Unphased - WARNING')
+
+Checking allele lists ...
+('HLA-A*01:01:01:01/HLA-B*07:02:01:01', {'HLA-A', 'HLA-B'}, 'WARNING')
 """
 
 import argparse
 import re
-
-
-class GlString:
-    """
-    common base class for GL Strings
-    """
-
-    def __init__(self, gl, imgthla):
-        self.gl = gl
-        self.imgthla = imgthla
-
-    def loci(self):
-        """
-        Takes GL String and returns a set containing all the loci
-        """
-        alleles = get_alleles(self.gl)
-        loci = set()
-        for allele in alleles:
-            loci.add(allele.split('*')[0])
-        return loci
-
-    def alleles(self):
-        """
-        Takes a GL String, and returns a set containing all the alleles
-        """
-        alleles = set()
-        for allele in re.split(r'[/~+|^]', self.gl):
-            alleles.add(allele)
-        return alleles
-
-    def allele_lists(self):
-        """
-        Takes a GL String and returns a list of allele lists it contains
-        """
-        allele_lists = []
-        for allele_list in re.split(r'[~+|^]', self.gl):
-            if "/" in allele_list:
-                allele_lists.append(allele_list)
-        return allele_lists
-
-    def genotypes(self):
-        """
-        Take a GL String, and return a list of genotypes
-        """
-        parsed = re.split(r'[|^]', self.gl)
-        genotypes = []
-        for genotype in parsed:
-            if "+" in genotype:
-                genotypes.append(genotype)
-        return genotypes
-
-    def genotype_lists(self):
-        """
-        Take a GL String, and return a list of genotype lists
-        """
-        parsed = re.split(r'[\^]', self.gl)
-        genotype_lists = []
-        for genotype_list in parsed:
-            if "|" in genotype_list:
-                genotype_lists.append(genotype_list)
-        return genotype_lists
-
-    def locus_blocks(self):
-        """
-        Take a GL String, and return a list of locus blocks
-        """
-        # return re.split(r'[\^]', glstring)
-        return self.gl.split('^')
 
 
 def get_loci(glstring):
@@ -285,48 +237,48 @@ def printchecked(checked, desc):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-g", "--glstring",
-                        # required=True,
+                        required=True,
                         help="GL String to be checked",
                         type=str)
     args = parser.parse_args()
 
     if args.glstring:
         testgl = [args.glstring]
-    else:
-        testgl = [
-            # good
-            # "HLA-A*01:01+HLA-A*24:02^HLA-B*44:01+HLA-B*44:02",
-            # "HLA-A*01:01+HLA-A*24:02|HLA-A*01:03+HLA-A*24:03",
-            # "HLA-A*01:01+HLA-A*01:02",
-            # "HLA-A*01:01/HLA-A*01:02",
-            # "HLA-A*01:01/HLA-A*01:02+HLA-A*24:02",
-            # ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02|"
-            #  "HLA-A*01:03/HLA-A*01:04+HLA-A*24:03"),
-            # "HLA-A*01:01~HLA-B*44:02+HLA-A*02:01~HLA-B*08:01",
-            # "HLA-A*01:01+HLA-A*24:02^HLA-B*08:01+HLA-B*44:02",
-            ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02|HLA-A*01:03+HLA-A*24:03^"
-             "HLA-B*08:01+HLA-B*44:01/HLA-B*44:02^"
-             "HLA-C*01:02+HLA-C*01:03^"
-             "HLA-DRB5*01:01~HLA-DRB1*03:01+HLA-DRB1*04:07:01/HLA-DRB1*04:92"),
-            # bad
-            # "HLA-A*01:01+HLA-A*24:02^HLA-A*01:03+HLA-A*24:03",
-            # "HLA-A*01:01+HLA-A*24:02|HLA-B*44:01+HLA-B*44:02",
-            # "HLA-A*01:01+HLA-B*01:02",
-            # "HLA-B*44:01/HLA-C*44:02",
-            # ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02|"
-            #  "HLA-A*01:03/HLA-A*01:04+HLA-B*24:03"),
-            # ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02^HLA-B*08:01+HLA-B*44:02^"
-            #  "HLA-A*01:01+HLA-A*24:02^HLA-B*08:01+HLA-B*44:02/HLA-A*01:01"),
-            # ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02/HLA-B*08:01^"
-            #  "HLA-C*01:02"),
-            # ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02/HLA-B*08:01^"
-            #  "HLA-C*01:02+HLA-A*01:01^"
-            #  "HLA-DRB5*01:01~HLA-DRB1*03:01"),
-            ("HLA-A*01:01/HLA-B*01:02+HLA-A*24:02|HLA-A*01:03+HLA-A*24:03^"
-             "HLA-B*08:01+HLA-B*44:01/HLA-B*44:02^"
-             "HLA-C*01:02+HLA-A*01:01~HLA-C*01:03^"
-             "HLA-DRB5*01:01~HLA-DRB1*03:01+HLA-DRB1*04:07:01/HLA-DRB1*04:92"),
-        ]
+    # else:
+    #     testgl = [
+    #         # good
+    #         # "HLA-A*01:01+HLA-A*24:02^HLA-B*44:01+HLA-B*44:02",
+    #         # "HLA-A*01:01+HLA-A*24:02|HLA-A*01:03+HLA-A*24:03",
+    #         # "HLA-A*01:01+HLA-A*01:02",
+    #         # "HLA-A*01:01/HLA-A*01:02",
+    #         # "HLA-A*01:01/HLA-A*01:02+HLA-A*24:02",
+    #         # ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02|"
+    #         #  "HLA-A*01:03/HLA-A*01:04+HLA-A*24:03"),
+    #         # "HLA-A*01:01~HLA-B*44:02+HLA-A*02:01~HLA-B*08:01",
+    #         # "HLA-A*01:01+HLA-A*24:02^HLA-B*08:01+HLA-B*44:02",
+    #         ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02|HLA-A*01:03+HLA-A*24:03^"
+    #          "HLA-B*08:01+HLA-B*44:01/HLA-B*44:02^"
+    #          "HLA-C*01:02+HLA-C*01:03^"
+    #          "HLA-DRB5*01:01~HLA-DRB1*03:01+HLA-DRB1*04:07:01/HLA-DRB1*04:92"),
+    #         # bad
+    #         # "HLA-A*01:01+HLA-A*24:02^HLA-A*01:03+HLA-A*24:03",
+    #         # "HLA-A*01:01+HLA-A*24:02|HLA-B*44:01+HLA-B*44:02",
+    #         # "HLA-A*01:01+HLA-B*01:02",
+    #         # "HLA-B*44:01/HLA-C*44:02",
+    #         # ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02|"
+    #         #  "HLA-A*01:03/HLA-A*01:04+HLA-B*24:03"),
+    #         # ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02^HLA-B*08:01+HLA-B*44:02^"
+    #         #  "HLA-A*01:01+HLA-A*24:02^HLA-B*08:01+HLA-B*44:02/HLA-A*01:01"),
+    #         # ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02/HLA-B*08:01^"
+    #         #  "HLA-C*01:02"),
+    #         # ("HLA-A*01:01/HLA-A*01:02+HLA-A*24:02/HLA-B*08:01^"
+    #         #  "HLA-C*01:02+HLA-A*01:01^"
+    #         #  "HLA-DRB5*01:01~HLA-DRB1*03:01"),
+    #         ("HLA-A*01:01/HLA-B*01:02+HLA-A*24:02|HLA-A*01:03+HLA-A*24:03^"
+    #          "HLA-B*08:01+HLA-B*44:01/HLA-B*44:02^"
+    #          "HLA-C*01:02+HLA-A*01:01~HLA-C*01:03^"
+    #          "HLA-DRB5*01:01~HLA-DRB1*03:01+HLA-DRB1*04:07:01/HLA-DRB1*04:92"),
+    #     ]
 
     for gl in testgl:
         print("GL String =", gl, "\n")
