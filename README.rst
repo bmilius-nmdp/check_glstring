@@ -6,11 +6,13 @@ pyglstring
  - glstring.glstring
  - glstring.check
 
-* Two scripts are included.
+* Three scripts are included.
 
  * ``checkgl.py`` - imports the glstring package. You'll need to install the package by running ``pip install .`` from the top of distribution (where the setup.py file is located)
- 
- * ``checkgl_standalone.py`` - all functions necessary are included
+
+ * ``checkgl_standalone.py`` - all necessary function are included
+
+ * ``checkgl_standalone_DR.py`` - same as above, but added special warning if genotype has differnt loci, but both are DR. 
 
 * Each of the scripts does a sanity check of a GL String. These check...
   
