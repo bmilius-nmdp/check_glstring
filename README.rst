@@ -12,7 +12,7 @@ pyglstring
 
  * ``checkgl_standalone.py`` - all necessary function are included
 
- * ``checkgl_standaloneDR.py`` - same as above, but added special warning if genotype has differnt loci, but both are DR. 
+ * ``checkgl_standalone_DR.py`` - same as above, but added special warning if genotype has differnt loci, but both are DR. 
 
 * Each of the scripts does a sanity check of a GL String. These check...
   
